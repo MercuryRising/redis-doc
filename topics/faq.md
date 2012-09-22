@@ -1,6 +1,6 @@
 # FAQ
 
-## Why Redis is different compared to other key-value stores?
+## Why is Redis different compared to other key-value stores?
 
 There are two main reasons.
 
@@ -27,7 +27,7 @@ With large keys/values the ratio is much better of course.
 64 bit systems will use considerably more memory than 32 bit systems to store the same keys, especially if the keys and values are small, this is because pointers takes 8 bytes in 64 bit systems. But of course the advantage is that you can
 have a lot of memory in 64 bit systems, so in order to run large Redis servers a 64 bit system is more or less required.
 
-## I like Redis high level operations and features, but I don't like that it takes everything in memory and I can't have a dataset larger the memory. Plans to change this?
+## I like Redis' high level operations and features, but I don't like that it takes everything in memory and I can't have a dataset larger the memory. Plans to change this?
 
 In the past the Redis developers experimented with Virtual Memory and other systems in order to allow larger than RAM datasets, but after all we are very happy if we can do one thing well: data served from memory, disk used for storage. So for now there are no plans to create an on disk backend for Redis. Most of what
 Redis is, after all, is a direct result of its current design.
@@ -38,7 +38,7 @@ At the same time Redis Cluster, an automatically distributed and fault tolerant
 implementation of a Redis subset, is a work in progress, and may be a good
 solution for many use cases.
 
-## If my dataset is too big for RAM and I don't want to use consistent hashing or other ways to distribute the dataset across different nodes, what I can do to use Redis anyway?
+## If my dataset is too big for RAM and I don't want to use consistent hashing or other ways to distribute the dataset across different nodes, what can I do to use Redis anyway?
 
 A possible solution is to use both an on disk DB (MySQL or others) and Redis
 at the same time, basically take the state on Redis (metadata, small but often written info), and all the other things that get accessed very
@@ -68,7 +68,7 @@ with an error to write commands (but will continue to accept read-only
 commands), or you can configure it to evict keys when the max memory limit
 is reached in the case you are using Redis for caching.
 
-## Background saving is failing with a fork() error under Linux even if I've a lot of free RAM!
+## Background saving is failing with a fork() error under Linux even if I have a lot of free RAM!
 
 Short answer: `echo 1 > /proc/sys/vm/overcommit_memory` :)
 
@@ -113,13 +113,13 @@ going to use too much CPU.
 However to maximize CPU usage you can start multiple instances of Redis in
 the same box and treat them as different servers. At some point a single
 box may not be enough anyway, so if you want to use multiple CPUs you can
-start thinking at some way to shard earlier.
+start thinking of some way to shard earlier.
 
 In Redis there are client libraries such Redis-rb (the Ruby client) and
 Predis (one of the most used PHP clients) that are able to handle multiple
 servers automatically using _consistent hashing_.
 
-## What is the maximum number of keys a single Redis instance can hold? and what the max number of elements in a List, Set, Sorted Set?
+## What is the maximum number of keys a single Redis instance can hold? What is the max number of elements in a List, Set, Sorted Set?
 
 In theory Redis can handle up to 2^32 keys, and was tested in practice to
 handle at least 250 million of keys per instance. We are working in order to
@@ -129,11 +129,11 @@ Every list, set, and sorted set, can hold 2^32 elements.
 
 In other words your limit is likely the available memory in your system.
 
-## What Redis means actually?
+## What does Redis actually mean?
 
 It means REmote DIctionary Server.
 
-## Why did you started the Redis project?
+## Why did you start the Redis project?
 
 Originally Redis was started in order to scale [LLOOGG][lloogg]. But after I got the basic server working I liked the idea to share the work with other guys, and Redis was turned into an open source project.
 
