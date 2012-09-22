@@ -1,7 +1,7 @@
 A case study: Design and implementation of a simple Twitter clone using only the Redis key-value store as database and PHP
 ===
 
-In this article I'll explain the design and the implementation of a [simple clone of Twitter](http://retwis.antirez.com) written using PHP and Redis as only database. The programming community uses to look at key-value stores like special databases that can't be used as drop in replacement for a relational database for the development of web applications. This article will try to prove the contrary.
+In this article I'll explain the design and the implementation of a [simple clone of Twitter](http://retwis.antirez.com) written using PHP and Redis as only database. The programming community used to look at key-value stores like special databases that can't be used as drop in replacement for a relational database for the development of web applications. This article will try to prove the contrary.
 
 Our Twitter clone, [called Retwis](http://retwis.antirez.com), is structurally simple, has very good performance, and can be distributed among N web servers and M Redis servers with very little effort. You can find the source code [here](http://code.google.com/p/redis/downloads/list).
 
@@ -40,7 +40,7 @@ Other common operations provided by key-value stores are DEL used to delete a gi
 Atomic operations
 ---
 
-So far it should be pretty simple, but there is something special about INCR. Think about this, why to provide such an operation if we can do it ourselves with a bit of code? After all it is as simple as:
+So far it should be pretty simple, but there is something special about INCR. Think about this, why would we provide such an operation if we can do it ourselves with a bit of code? After all it is as simple as:
 
     x = GET foo
     x = x + 1
@@ -55,7 +55,7 @@ The problem is that doing the increment this way will work as long as there is o
     SET foo x (foo is now 11)
     SET foo y (foo is now 11)
 
-Something is wrong with that! We incremented the value two times, but instead to go from 10 to 12 our key holds 11. This is because the INCR operation done with `GET / increment / SET` *is not an atomic operation*. Instead the INCR provided by Redis, Memcached, ..., are atomic implementations, the server will take care to protect the get-increment-set for all the time needed to complete in order to prevent simultaneous accesses.
+Something is wrong with that! We incremented the value two times, but instead of going from 10 to 12 our key holds 11. This is because the INCR operation done with `GET / increment / SET` *is not an atomic operation*. Instead the INCR provided by Redis, Memcached, ..., are atomic implementations, the server will take care to protect the get-increment-set for all the time needed to complete in order to prevent simultaneous accesses.
 
 What makes Redis different from other key-value stores is that it provides more operations similar to INCR that can be used together to model complex problems. This is why you can use Redis to write whole web applications without using an SQL database and without going crazy.
 
@@ -117,7 +117,7 @@ Data layout
 
 Working with a relational database this is the stage were the database layout should be produced in form of tables, indexes, and so on. We don't have tables, so what should be designed? We need to identify what keys are needed to represent our objects and what kind of values this keys need to hold.
 
-Let's start from Users. We need to represent this users of course, with the username, userid, password, followers and following users, and so on. The first question is, what should identify an user inside our system? The username can be a good idea since it is unique, but it is also too big, and we want to stay low on memory. So like if our DB was a relational one we can associate an unique ID to every user. Every other reference to this user will be done by id. That's very simple to do, because we have our atomic INCR operation! When we create a new user we can do something like this, assuming the user is called "antirez":
+Let's start from Users. We need to represent this users of course, with the username, userid, password, followers and following users, and so on. The first question is, what should identify a user inside our system? The username can be a good idea since it is unique, but it is also too big, and we want to stay low on memory. So like if our DB was a relational one we can associate an unique ID to every user. Every other reference to this user will be done by id. That's very simple to do, because we have our atomic INCR operation! When we create a new user we can do something like this, assuming the user is called "antirez":
 
     INCR global:nextUserId => 1000
     SET uid:1000:username antirez
@@ -145,12 +145,12 @@ Another important thing we need is a place were we can add the updates to displa
 Authentication
 ---
 
-OK, we have more or less everything about the user, but authentication. We'll handle authentication in a simple but robust way: we don't want to use PHP sessions or other things like this, our system must be ready in order to be distributed among different servers, so we'll take the whole state in our Redis database. So all we need is a random string to set as the cookie of an authenticated user, and a key that will tell us what is the user ID of the client holding such a random string. We need two keys in order to make this thing working in a robust way:
+OK, we have more or less everything about the user, but authentication. We'll handle authentication in a simple but robust way: we don't want to use PHP sessions or other things like this, our system must be ready in order to be distributed among different servers, so we'll take the whole state in our Redis database. So all we need is a random string to set as the cookie of an authenticated user, and a key that will tell us what is the user ID of the client holding such a random string. We need two keys in order to make this thing work in a robust way:
 
     SET uid:1000:auth fea5e81ac8ca77622bed1c2132a021f9
     SET auth:fea5e81ac8ca77622bed1c2132a021f9 1000
 
-In order to authenticate an user we'll do this simple work (`login.php`):
+In order to authenticate a user we'll do this simple work (`login.php`):
  * Get the username and password via the login form
  * Check if the username:`<username>`:uid key actually exists
  * If it exists we have the user id, (i.e. 1000)
@@ -326,16 +326,16 @@ If user id 1000 (antirez) wants to follow user id 1001 (pippo), we can do this w
 SADD uid:1000:following 1001
 SADD uid:1001:followers 1000
 
-Note the same pattern again and again, in theory with a relational database the list of following and followers is a single table with fields like `following_id` and `follower_id`. With queries you can extract the followers or following of every user. With a key-value DB that's a bit different as we need to set both the `1000 is following 1001` and `1001 is followed by 1000` relations. This is the price to pay, but on the other side accessing the data is simpler and ultra-fast. And having this things as separated sets allows us to do interesting stuff, for example using SINTER we can have the intersection of 'following' of two different users, so we may add a feature to our Twitter clone so that it is able to say you at warp speed, when you visit somebody' else profile, "you and foobar have 34 followers in common" and things like that.
+Note the same pattern again and again, in theory with a relational database the list of following and followers is a single table with fields like `following_id` and `follower_id`. With queries you can extract the followers or following of every user. With a key-value DB that's a bit different as we need to set both the `1000 is following 1001` and `1001 is followed by 1000` relations. This is the price to pay, but on the other side accessing the data is simpler and ultra-fast. And having these things as separated sets allows us to do interesting stuff, for example using SINTER we can have the intersection of 'following' of two different users, so we may add a feature to our Twitter clone so that it is able to say you at warp speed, when you visit somebody' else profile, "you and foobar have 34 followers in common" and things like that.
 
 You can find the code that sets or removes a following/follower relation at follow.php. It is trivial as you can see.
 
 Making it horizontally scalable
 ---
 
-Gentle reader, if you reached this point you are already an hero, thank you. Before to talk about scaling horizontally it is worth to check the performances on a single server. Retwis is *amazingly fast*, without any kind of cache. On a very slow and loaded server, apache benchmark with 100 parallel clients issuing 100000 requests measured the average pageview to take 5 milliseconds. This means you can serve millions of users every day with just a single Linux box, and this one was monkey asses slow! Go figure with more recent hardware.
+Gentle reader, if you reached this point you are already a hero, thank you. Before we talk about scaling horizontally it is worth checking the performances on a single server. Retwis is *amazingly fast*, without any kind of cache. On a very slow and loaded server, apache benchmark with 100 parallel clients issuing 100000 requests measured the average pageview to take 5 milliseconds. This means you can serve millions of users every day with just a single Linux box, and this one was monkey asses slow! Go figure with more recent hardware.
 
-So, first of all, probably you will not need more than one server for a lot of applications, even when you have a lot of users. But let's assume we *are* Twitter and need to handle a huge amount of traffic. What to do?
+So, first of all, probably you will not need more than one server for a lot of applications, even when you have a lot of users. But let's assume we *are* Twitter and need to handle a huge amount of traffic. What would we do?
 
 Hashing the key
 ---
@@ -346,13 +346,12 @@ The first thing to do is to hash the key and issue the request on different serv
 
 This has a lot of problems since if you add one server you need to move too much keys and so on, but this is the general idea even if you use a better hashing scheme like consistent hashing.
 
-Ok, are key accesses distributed among the key space? Well, all the user data will be partitioned among different servers. There are no inter-keys operations used (like SINTER, otherwise you need to care that things you want to intersect will end in the same server. *This is why Redis unlike memcached does not force a specific hashing scheme, it's application specific*). Btw there are keys that are accessed more frequently.
+Ok, are key accesses distributed among the key space? Well, all the user data will be partitioned among different servers. There are no inter-keys operations used (like SINTER, otherwise you need to care that things you want to intersect will end in the same server. *This is why Redis unlike memcached does not force a specific hashing scheme, it's application specific*). There are specific keys in our database that are accessed more frequently.
 
 Special keys
 ---
 
-For example every time we post a new message, we *need* to increment the `global:nextPostId` key. How to fix this problem? A Single server will get a lot if increments. The simplest way to handle this is to have a dedicated server just for increments. This is probably an overkill btw unless you have really a lot of traffic. There is another trick. The ID does not really need to be an incremental number, but just *it needs to be unique*. So you can get a random string long enough to be unlikely (almost impossible, if it's md5-size) to collide, and you are done. We successfully eliminated our main problem to make it really horizontally scalable!
+For example every time we post a new message, we *need* to increment the `global:nextPostId` key. How do we fix this problem? A single server will get a lot if increments. The simplest way to handle this is to have a dedicated server just for increments. This is probably overkill unless you really have a lot of traffic. There is another trick. The ID does not really need to be an incremental number, but just *it needs to be unique*. So you can get a random string long enough to be unlikely (almost impossible, if it's md5-size) to collide, and you are done. We successfully eliminated our main problem to make it really horizontally scalable!
 
-There is another one: global:timeline. There is no fix for this, if you need to take something in order you can split among different servers and *then merge* when you need to get the data back, or take it ordered and use a single key. Again if you really have so much posts per second, you can use a single server just for this. Remember that with commodity hardware Redis is able to handle 100000 writes for second, that's enough even for Twitter, I guess.
+There is another one: global:timeline. There is no fix for this, if you need to take something in order you can split among different servers and *then merge* when you need to get the data back, or take it ordered and use a single key. Again if you really have so many posts per second, you can use a single server just for this. Remember that with commodity hardware Redis is able to handle 100000 writes per second, that's enough even for Twitter, I guess.
 
-Please feel free to use the comments below for questions and feedbacks.
